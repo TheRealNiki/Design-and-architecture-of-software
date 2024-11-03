@@ -1,0 +1,41 @@
+from flask import Flask, render_template
+import requests
+from bs4 import BeautifulSoup
+
+app = Flask(__name__)
+
+
+# Function to scrape company codes from the Macedonian Stock Exchange
+def get_company_codes():
+    url = 'https://www.mse.mk/mk/stats/symbolhistory/KMB'  # Example URL for company "KMB"
+
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Extract company codes from the dropdown menu
+        company_codes = []
+        for option in soup.find_all('option'):
+            code = option.get('value')
+            name = option.text
+            if code and code.isalpha():  # Skip non-company codes, like bonds or numeric entries
+                company_codes.append({"code": code, "name": name})
+
+        return company_codes
+    else:
+        return []
+
+
+# Define the Flask route to serve the HTML page
+@app.route('/')
+def index():
+    # Get the dynamically scraped company codes
+    companies = get_company_codes()
+
+    # Render the HTML page and pass the company codes to it
+    return render_template('index.html', companies=companies)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
