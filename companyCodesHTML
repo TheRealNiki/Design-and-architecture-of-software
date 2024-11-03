@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macedonian Stock Exchange - Company Codes</title>
+</head>
+<body>
+    <h1>Select a Company from the Macedonian Stock Exchange</h1>
+
+    <label for="companyCode">Choose a company:</label>
+    <select id="companyCode">
+        <!-- Dynamically populated dropdown from Python -->
+        {% for company in companies %}
+            <option value="{{ company['code'] }}">{{ company['name'] }}</option>
+        {% endfor %}
+    </select>
+
+    <button id="viewHistoryBtn">View Company History</button>
+
+    <script>
+        document.getElementById('viewHistoryBtn').addEventListener('click', function() {
+            const companyCode = document.getElementById('companyCode').value;
+            // Redirect to the company's symbol history page on the Macedonian Stock Exchange website
+            window.location.href = `https://www.mse.mk/mk/stats/symbolhistory/${companyCode}`;
+        });
+    </script>
+</body>
+</html>
