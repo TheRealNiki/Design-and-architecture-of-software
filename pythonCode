@@ -1,0 +1,150 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from datetime import datetime, timedelta
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from itertools import groupby
+
+
+# Функција за проверка дали името на компанијата е во ред (без бројки и без прва буквда да е буквата Е)
+def is_valid_company(company_name):
+    return not any(char.isdigit() for char in company_name) and not company_name.startswith('E')
+
+
+# Функција за добивање на датумите од последните 10 години
+def get_date_chunks():
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365 * 10)  # 10 години
+    date_chunks = []
+
+    # Ги вртиме последните 10 години по 365 дена
+    current_start_date = start_date
+    while current_start_date < end_date:
+        current_end_date = current_start_date + timedelta(days=365)
+        if current_end_date > end_date:
+            current_end_date = end_date  # Adjust the last chunk to the current date
+
+        # Привремено ги форматираме датумите во "YYYY-MM-DD" формат
+        date_chunks.append((current_start_date.strftime("%Y-%m-%d"), current_end_date.strftime("%Y-%m-%d")))
+        current_start_date = current_end_date + timedelta(days=1)  # И одиме во наредниот сет на датуми
+
+    return date_chunks
+
+def format_number(value):
+    try:
+        # Конвертираме во float, па форматираме
+        return "{:,.2f}".format(float(value)).replace(",", "X").replace(".", ",").replace("X", ".")
+    except ValueError:
+        return value  # Врати го оригиналот ако не е број
+
+# Функција за скрејпање податоци за една компанија во еден сет на датуми (365 дена)
+def scrape_company_data(company_name, company_code, start_date, end_date):
+    company_url = f"https://www.mse.mk/en/stats/symbolhistory/{company_code}?fromDate={start_date}&toDate={end_date}"
+    company_response = requests.get(company_url)
+
+    company_data = []
+    if company_response.status_code == 200:
+        company_soup = BeautifulSoup(company_response.content, 'html.parser')
+        table = company_soup.select_one('table.table')
+
+        if table:
+            for row in table.find_all('tr')[1:]:  # Ја скокаме насловната редица
+                cells = row.find_all('td')
+                if len(cells) >= 8:
+                    date = cells[0].text.strip()
+                    last_trade_price = cells[1].text.strip()
+                    max_price = cells[2].text.strip()
+                    min_price = cells[3].text.strip()
+                    avg_price = cells[4].text.strip()
+                    percent_change = cells[5].text.strip()
+                    volume = cells[6].text.strip()
+                    turnover_best = cells[7].text.strip()
+                    turnover_total = cells[8].text.strip()
+
+                    # Го враќаме форматот на датумите во македонски формат "дд.мм.гггг"
+                    try:
+                        date = pd.to_datetime(date).strftime("%d.%m.%Y")
+                    except ValueError:
+                        print(f"Error formatting date: {date}")
+                        continue
+
+                    # Ги прикачуваме податоците
+                    company_data.append({
+                        "CompanyCode": company_code,
+                        "Date": date,
+                        "LastTradePrice": last_trade_price,
+                        "Max": max_price,
+                        "Min": min_price,
+                        "AvgPrice": avg_price,
+                        "%Change": percent_change,
+                        "Volume": volume,
+                        "TurnoverBESTMKD": turnover_best,
+                        "TurnoverTotalMKD": turnover_total
+                    })
+    else:
+        print(f"Failed to load data for {company_name} from {start_date} to {end_date}.")
+
+    return company_data
+
+# Главната логика за скрејпање на податоци
+if __name__ == '__main__':
+    start_time = time.time()  # Го чуваме почетното време
+    url = "https://www.mse.mk/en/stats/symbolhistory/KMB"  # URL за добивање на листата на компании
+    response = requests.get(url)
+    all_data = []
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Ја наоѓаме листата на компании
+        dropdown = soup.select_one('select#Code')
+        company_links = []
+
+        if dropdown:
+            for option in dropdown.find_all('option'):
+                company_name = option.text.strip()
+                company_code = option.get('value')
+
+                # Проверуваме дали името на компанијата е валидно име
+                if is_valid_company(company_name):
+                    company_links.append((company_name, company_code))
+
+        # Го добиваме сетот на датуми за последните 10 години
+        date_chunks = get_date_chunks()
+
+        # Користиме ThreadPoolExecutor за паралелно скрејпање
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = []
+            for company_name, company_code in company_links:
+                # Праќаме барање за секој сет на датуми
+                for start_date, end_date in date_chunks:
+                    futures.append(
+                        executor.submit(scrape_company_data, company_name, company_code, start_date, end_date))
+
+            # Собираме резултати од сите threads
+            for future in as_completed(futures):
+                data = future.result()
+                all_data.extend(data)  # Додаваме податоци на финалната листа
+
+        # Сортираме компании по име (A-Z), па по датум (newest to oldest) во секоја компанија
+        all_data_sorted = sorted(all_data, key=lambda x: x['CompanyCode'])
+
+        # Сортираме по датум во секоја компанија (newest to oldest)
+        all_data_sorted = [
+            row
+            for _, group in groupby(all_data_sorted, key=lambda x: x['CompanyCode'])
+            for row in sorted(group, key=lambda x: pd.to_datetime(x['Date'], dayfirst=True), reverse=True)
+        ]
+
+        # креираме DataFrame и зачувуваме во CSV
+        df = pd.DataFrame(all_data_sorted)
+        df.to_csv("company_data.csv", index=False)
+        print("Data successfully saved to 'company_data.csv'.")
+
+    else:
+        print("Failed to load the main URL.")
+
+    end_time = time.time()  # Го снимаме крајното време
+    elapsed_time = end_time - start_time  # Го добиваме вкупното време
+    print(f"Execution time: {elapsed_time:.2f} seconds.")  # И го принтаме
