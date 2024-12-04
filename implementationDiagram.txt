@@ -1,0 +1,21 @@
+Implementation Architecture Diagram
+
+The process begins with an HTTP request (from a user or system).
+This triggers the web server to start the application’s workflow.
+The Web Server handles incoming requests and forwards them to the necessary components.
+It sends API calls to other internal components to fulfill the request, such as retrieving or processing data.
+The Scheduler ensures that tasks (like scraping) run on a schedule.
+It sends OS signals to components like the Scraper, Data Cleaning, and Data Transformation (indirectly) to trigger operations at specified times.
+The Scraper retrieves stock data from the Macedonian Stock Exchange (MSE) website.
+It uses network protocols (since the website is external) to gather the data from the MSE.
+After scraping, it sends the raw data to the Data Cleaning component for processing.
+This component cleans the data, removing any errors or missing values.
+It then sends the cleaned data to Data Transformation.
+The Data Transformation component formats the cleaned data into a structure suitable for storage or further use (CSV, database format).
+The transformed data is sent to the Database for storage.
+The Database stores the processed stock data (historical data, prices, etc) for retrieval later.
+The Macedonian Stock Exchange (MSE) website is an external system that provides the raw data that the Scraper retrieves.
+It communicates with the Scraper via network protocols (HTTP requests).
+API Calls: Used for communication between components within the same system, such as between the Web Server, Scraper, Data Cleaning, Data Transformation, and Database.
+OS Signals: The Scheduler sends OS signals to components to trigger specific actions (running the Scraper, starting data cleaning).
+Network Protocol: The Scraper uses network protocols to connect to the MSE Website and retrieve data over the internet.

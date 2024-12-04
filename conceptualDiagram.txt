@@ -1,0 +1,22 @@
+Conceptual Architecture Diagram
+
+The Client UI represents the user interface that allows users to interact with the application.
+It communicates with the Web Server to send requests and displays the responses.
+The Web Server is the central component that interacts with the Client UI and handles HTTP requests.
+It serves as the gateway for user requests and communicates with the Database and the Data Scraper.
+Also, it ensures that users can access the stock data, view dashboards, and interact with the application.
+The Scheduler automates tasks at specified intervals, like scraping new data or updating historical stock prices.
+It triggers the Scraper to collect data from the Macedonian Stock Exchange (MSE) Website and ensures that the application remains up-to-date without requiring manual intervention.
+The Scraper is responsible for scraping data from the MSE Website.
+It fetches issuer information, stock prices, historical data and other relevant data from the website.
+Also, it passes the scraped data to the Data Retrieval component.
+The Data Retrieval component is responsible for fetching missing or updated stock data.
+It retrieves historicaldata from the MSE Website.
+The Data Cleaning component processes the raw stock data to ensure it is accurate and complete.
+It fills in missing data, removes duplicates, and handles inconsisencies in the scraped data.
+The Data Transformation component prepares the cleaned data for storage in the Database.
+It ensures that the data conforms to the correct format for the database by using the Data Formatter.
+The Database stores all the cleaned, transformed data about issuers, stock prices and historical trading data.
+It also serves as the central data repository for the application.
+The Macedonian Stock Exchange Website is the external source of stock data, which the Scraper accesses to collect the data.
+It contains the list of issuers, historical stock prices, and other relevant financial information.
