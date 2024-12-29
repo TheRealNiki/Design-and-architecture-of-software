@@ -1,0 +1,25 @@
+Execution Architecture Diagram
+
+The diagram is contained within a hardware boundary, which represents the physical
+machine or cloud infrastructure where the processes and components of the system are running.
+Inside the hardware boundary, the Database subsystem is placed as a concurrent subsystem. 
+It holds all the stock data that has been scraped, cleaned, and transformed, and is accessible by the processes.
+
+Processes
+Web Server:
+This process handles incoming HTTP requests from users.
+It synchronously communicates with the Database to retrieve data.
+After receiving a request, it will respond to the user by retrieving the stock data.
+Scheduler:
+The Scheduler is responsible for initiating periodic tasks, such as scraping stock data.
+It communicates asynchronously with the Scraper process, triggering it to start fetching the latest stock data from the Macedonian Stock Exchange.
+Scraper:
+The Scraper process, when triggered by the Scheduler, retrieves stock data from the Macedonian Stock Exchange website.
+After scraping, it sends a callback to the Data Cleaning process, notifying it that the data is ready for cleaning.
+Data Cleaning:
+This process receives data from the Scraper and cleans it.
+Once cleaning is completed, it communicates asynchronously with the Data Transformation process.
+Data Transformation:
+After cleaning, this process formats the data into the structure needed for database storage.
+It synchronously interacts with the Database to store the transformed data.
+
