@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fundamental Analysis Results</title>
+    <style>
+        /* General styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-top: 20px;
+            font-size: 2.5em;
+        }
+
+        /* Container for results */
+        .results-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Individual result card */
+        .result-card {
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+        }
+
+        .result-card:last-child {
+            border-bottom: none; /* Remove border for the last card */
+        }
+
+        .result-card h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .result-card p {
+            margin: 5px 0;
+            line-height: 1.6em;
+        }
+
+        .result-card strong {
+            color: #555; /* Slightly darker color for labels */
+        }
+
+        /* Back link styling */
+        .back-link {
+            display: block;
+            width: fit-content;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 5px; /* Rounded corners */
+            transition: background-color 0.3s ease; /* Smooth hover effect */
+        }
+
+        .back-link:hover {
+            background-color: #45a049; /* Darker green on hover */
+        }
+
+        /* Responsive design for smaller devices */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em; /* Adjust heading size for smaller screens */
+                margin-top: 15px;
+                margin-bottom: 10px;
+            }
+
+            .results-container {
+                padding: 15px; /* Reduce padding for smaller screens */
+                width: 95%;
+                box-shadow: none; /* Remove shadow on smaller screens */
+                border-radius: 5px; /* Slightly smaller radius */
+             }
+
+             .result-card h3 {
+                font-size: 1.3em; /* Adjust card title size */
+             }
+
+             .back-link {
+                font-size: 0.9em; /* Adjust button size */
+                padding: 8px 16px;
+             }
+         }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">Back to News Articles</a>
+    <h1>Fundamental Analysis Results</h1>
+
+    <div class="results-container">
+        <!-- Loop through results -->
+        {% for result in results %}
+        <div class="result-card">
+            <h3>{{ result.Company }}</h3> <!-- Display Company Name -->
+            <p><strong>Title:</strong> {{ result.Title }}</p>
+            <p><strong>Sentiment:</strong> {{ result.Sentiment }}</p>
+            <p><strong>Polarity:</strong> {{ result.Polarity }}</p>
+            <p><strong>Recommendation:</strong> {{ result.Recommendation }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
