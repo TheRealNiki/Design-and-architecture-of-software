@@ -1,0 +1,36 @@
+#version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    depends_on:
+      - rsi-service
+      - moving-average-service
+      - macd-service
+
+  rsi-service:
+    build:
+      context: ./rsi-service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+
+  moving-average-service:
+    build:
+      context: ./moving-average-service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+
+  macd-service:
+    build:
+      context: ./macd-service
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
