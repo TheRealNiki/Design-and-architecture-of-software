@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macedonian Stock Exchange Predictor</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 10px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        main {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        select, button {
+            padding: 10px;
+            margin-bottom: 15px;
+            width: calc(100% - 20px);
+            max-width: 400px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content label {
+            display: block;
+            padding: 10px;
+        }
+
+        .dropdown-content input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Table Styles */
+        table {
+            border-collapse: collapse;
+            width: calc(100% - 40px);
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        a{
+            color: white;
+            text-decoration: none;
+         }
+        a:hover {
+            text-decoration: none;
+        }
+
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Macedonian Stock Exchange Predictor</h1>
+    </header>
+
+    <main>
+        <form id="analysisForm">
+            <label for="company">Select Company:</label>
+            <select id="company" name="company"></select>
+
+            <label for="timeframe">Select Timeframe:</label>
+            <select id="timeframe" name="timeframe">
+                <option value="daily">All-time</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+            </select>
+
+            <label>Select Indicators:</label>
+            <div class="dropdown">
+                <button type="button">Choose Indicators</button>
+                <div class="dropdown-content">
+                    <label><input type="checkbox" name="indicators" value="LastTradePrice"> Last Trade Price</label>
+                    <label><input type="checkbox" name="indicators" value="RSI"> RSI</label>
+                    <label><input type="checkbox" name="indicators" value="SMA_5"> SMA 5</label>
+                    <label><input type="checkbox" name="indicators" value="EMA_5"> EMA 5</label>
+                    <label><input type="checkbox" name="indicators" value="SMA_10"> SMA 10</label>
+                    <label><input type="checkbox" name="indicators" value="EMA_10"> EMA 10</label>
+                    <label><input type="checkbox" name="indicators" value="SMA_20"> SMA 20</label>
+                    <label><input type="checkbox" name="indicators" value="EMA_20"> EMA 20</label>
+                    <label><input type="checkbox" name="indicators" value="MACD"> MACD</label>
+                    <label><input type="checkbox" name="indicators" value="Signal_Line"> Signal Line</label>
+                </div>
+            </div>
+
+            <button type="submit">Analyze</button>
+<!--            <button><a href="news.html">Fundamental Analysis</a></button>-->
+        </form>
+
+        <!-- Error Message -->
+        <div id="error-message"></div>
+
+        <!-- Table for Signals -->
+        <table id="signals-table">
+          <thead>
+              <tr>
+                  <th>Buy</th>
+                  <th>Sell</th>
+                  <th>Hold</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr id="signals-row">
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+              </tr>
+          </tbody>
+        </table>
+
+        <!-- Graph Container -->
+        <div id="graph-container"></div>
+
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+      // Fetch companies from the server and populate the dropdown
+      fetch('/get_companies')
+          .then(response => response.json())
+          .then(data => {
+              const companySelect = document.getElementById('company');
+              data.companies.forEach(company => {
+                  const option = document.createElement('option');
+                  option.value = company;
+                  option.textContent = company;
+                  companySelect.appendChild(option);
+              });
+          });
+      // Handle form submission
+      document.getElementById('analysisForm').addEventListener('submit', function(event) {
+          event.preventDefault();
+
+          const errorDiv = document.getElementById('error-message');
+          const graphContainer = document.getElementById('graph-container');
+          const signalsRow = document.getElementById('signals-row');
+
+          errorDiv.textContent = ''; // Clear previous errors
+          graphContainer.innerHTML = '<p>Loading...</p>'; // Show loading message
+
+          const formData = new FormData(this);
+
+          fetch('/analyze', {
+              method: 'POST',
+              body: formData
+          })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.error) {
+                      errorDiv.textContent = data.error; // Display error message
+                      graphContainer.innerHTML = ''; // Clear loading message
+                  } else {
+                      graphContainer.innerHTML = ''; // Clear existing graph or loading message
+
+                      // Update signals table
+                      signalsRow.children[0].textContent = data.signals.buy; // Buy signals
+                      signalsRow.children[1].textContent = data.signals.sell; // Sell signals
+                      signalsRow.children[2].textContent = data.signals.hold; // Hold signals
+
+
+                      const graphData = JSON.parse(data.graph);
+                      const graphDiv = document.createElement('div');
+                      graphDiv.id = 'plotly-graph';
+                      graphContainer.appendChild(graphDiv);
+                      Plotly.newPlot('plotly-graph', graphData.data, graphData.layout);
+                  }
+              })
+              .catch(error => {
+                  errorDiv.textContent = 'An error occurred while processing your request.';
+                  console.error(error);
+              });
+      });
+    </script>
+</body>
+</html>
